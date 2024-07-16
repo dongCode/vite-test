@@ -1,0 +1,151 @@
+# Vite热更新原理
+
+在现代前端开发中，热更新（Hot Module Replacement，简称 HMR）是提高开发效率的关键技术。Vite 作为一个快速的构建工具和开发服务器，以其极速的热更新能力广受欢迎。本篇博客将详细介绍 Vite 的热更新原理，并通过丰富的代码示例，从简单到复杂，逐步剖析其工作机制。
+
+## 什么是热更新？
+
+热更新是一种在不刷新整个页面的情况下，实时更新已加载模块的技术。这不仅可以加快开发速度，还可以保留应用程序的状态，使得开发过程更加流畅。
+
+## Vite 的热更新工作原理
+
+Vite 的热更新主要依赖于两个核心部分：**开发服务器**和**模块热替换**。我们先来了解一下这两个部分的基本原理。
+
+### 开发服务器
+
+Vite 内置了一个开发服务器，当你启动 Vite 项目时，开发服务器会监听你的源文件变化（通过 chokidar实现），并在检测到变化时触发客户端相应的更新。
+
+### 模块热替换
+
+模块热替换（HMR）是 Vite 热更新的核心，它允许在应用运行时替换、添加或删除模块，而无需完全刷新页面。
+
+## 简单示例
+
+我们从一个简单的示例开始，逐步理解 Vite 的热更新原理。
+
+### 设置项目
+
+首先，我们需要一个 Vite 项目。使用以下命令创建一个新的 Vite 项目：
+
+```sh
+npm init vite@latest my-vite-app
+cd my-vite-app
+npm install
+npm run dev
+```
+
+### 热更新示例
+
+在 `src` 目录下创建一个简单的 JavaScript 文件 `counter.js`：
+
+```js
+// counter.js
+let count = 0;
+const button = document.createElement('button');
+button.textContent = `Count: ${count}`;
+button.addEventListener('click', () => {
+  count++;
+  button.textContent = `Count: ${count}`;
+});
+document.body.appendChild(button);
+
+if (import.meta.hot) {
+  import.meta.hot.accept();
+  import.meta.hot.dispose(() => {
+    document.body.removeChild(button);
+  });
+}
+```
+
+然后在 `main.js` 中引入这个模块：
+
+```js
+import './counter.js';
+```
+
+运行 `npm run dev` 启动开发服务器后，当你修改 `counter.js` 文件时，Vite 会自动触发热更新，无需手动刷新页面。
+
+## 深入理解热更新机制
+
+让我们深入探讨 Vite 是如何实现热更新的。
+
+### WebSocket 连接
+
+当你启动 Vite 的开发服务器时，它会为客户端（浏览器）建立一个 WebSocket 连接，用于实时通信。当服务器检测到文件变化时，它会通过 WebSocket 向客户端发送更新通知。
+
+### 模块更新
+
+客户端接收到更新通知后，会检查受影响的模块并触发相应的更新逻辑。在 `counter.js` 示例中，`import.meta.hot.accept()` 注册了模块的更新回调，而 `import.meta.hot.dispose()` 注册了模块卸载前的清理回调。
+
+## 复杂示例
+
+接下来，我们看一个更复杂的示例，展示如何在一个复杂应用中使用 Vite 的热更新功能。
+
+### 组件热更新
+
+假设我们有一个 React 项目，并使用 Vite 作为开发工具。在 `src` 目录下创建一个 React 组件 `App.jsx`：
+
+```jsx
+// App.jsx
+import React, { useState } from 'react';
+
+function App() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <h1>Count: {count}</h1>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+    </div>
+  );
+}
+
+export default App;
+```
+
+在 `main.jsx` 中引入这个组件：
+
+```jsx
+import React from 'react';
+import ReactDOM from 'react-dom';
+import App from './App.jsx';
+
+ReactDOM.render(<App />, document.getElementById('root'));
+
+if (import.meta.hot) {
+  import.meta.hot.accept('./App.jsx', () => {
+    const NextApp = require('./App.jsx').default;
+    ReactDOM.render(<NextApp />, document.getElementById('root'));
+  });
+}
+```
+
+运行 `npm run dev` 启动开发服务器后，当你修改 `App.jsx` 文件时，Vite 会自动触发热更新，并重新渲染组件，而无需刷新页面。
+
+## Vite 的高级热更新功能
+
+除了基本的模块热替换，Vite 还支持更高级的热更新功能，例如状态保留、CSS 热替换等。
+
+### 状态保留
+
+在某些情况下，你可能希望在热更新时保留组件的状态。Vite 提供了相关的 API 来实现这一点。
+
+### CSS 热替换
+
+Vite 支持 CSS 热替换，当你修改 CSS 文件时，Vite 会自动更新样式而无需刷新页面。例如：
+
+```css
+/* styles.css */
+body {
+  background-color: lightblue;
+}
+```
+
+```js
+import './styles.css';
+```
+
+当你修改 `styles.css` 文件时，Vite 会自动更新样式。
+
+## 总结
+
+Vite 的热更新功能极大地提高了开发效率，使得开发者可以快速地看到代码修改的效果。本文从简单到复杂，逐步解析了 Vite 的热更新原理及其在实际项目中的应用。希望这篇博客能帮助你更好地理解和利用 Vite 的热更新功能。
