@@ -1,0 +1,6 @@
+console.log("myModule resolveId");
+
+
+export default function myModule() {
+  
+}

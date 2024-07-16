@@ -783,7 +783,7 @@ export async function _createServer(
     if (isUnlink) moduleGraph.onFileDelete(file)
     await onHMRUpdate(isUnlink ? 'delete' : 'create', file)
   }
-
+  //  HMR 更新监测
   watcher.on('change', async (file) => {
     file = normalizePath(file)
     await container.watchChange(file, { event: 'update' })

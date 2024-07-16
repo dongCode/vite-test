@@ -116,7 +116,7 @@ export function getShortName(file: string, root: string): string {
     ? path.posix.relative(root, file)
     : file
 }
-
+// 服务端具体执行HMR热更新
 export async function handleHMRUpdate(
   type: 'create' | 'delete' | 'update',
   file: string,
