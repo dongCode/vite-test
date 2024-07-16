@@ -6,7 +6,6 @@ export default function aliasPlugin() {
     resolveId(source) {
       console.log("source", source);
         if (source.startsWith("@alias/")) {
-        debugger
         // 将 '@alias/' 开头的模块路径解析为 'src/' 目录下的对应路径
         const realPath = path.resolve(__dirname, "src", source.slice(7));
         return realPath;
