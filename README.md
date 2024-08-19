@@ -1,4 +1,4 @@
-# Vite热更新原理
+# Vite 热更新原理
 
 在现代前端开发中，热更新（Hot Module Replacement，简称 HMR）是提高开发效率的关键技术。Vite 作为一个快速的构建工具和开发服务器，以其极速的热更新能力广受欢迎。本篇博客将详细介绍 Vite 的热更新原理，并通过丰富的代码示例，从简单到复杂，逐步剖析其工作机制。
 
@@ -12,7 +12,7 @@ Vite 的热更新主要依赖于两个核心部分：**开发服务器**和**模
 
 ### 开发服务器
 
-Vite 内置了一个开发服务器，当你启动 Vite 项目时，开发服务器会监听你的源文件变化（通过 chokidar实现），并在检测到变化时触发客户端相应的更新。
+Vite 内置了一个开发服务器，当你启动 Vite 项目时，开发服务器会监听你的源文件变化（通过 chokidar 实现），并在检测到变化时触发客户端相应的更新。
 
 ### 模块热替换
 
@@ -27,7 +27,7 @@ Vite 内置了一个开发服务器，当你启动 Vite 项目时，开发服务
 首先，我们需要一个 Vite 项目。使用以下命令创建一个新的 Vite 项目：
 
 ```sh
-npm init vite@latest my-vite-app
+npm init vite @vitejs/plugin-vue  my-vite-app
 cd my-vite-app
 npm install
 npm run dev
@@ -35,38 +35,56 @@ npm run dev
 
 ### 热更新示例
 
-在 `src` 目录下创建一个简单的 JavaScript 文件 `counter.js`：
+增加配置文件 文件 `vite.config.js`：
 
 ```js
 // counter.js
-let count = 0;
-const button = document.createElement('button');
-button.textContent = `Count: ${count}`;
-button.addEventListener('click', () => {
-  count++;
-  button.textContent = `Count: ${count}`;
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [vue()],
 });
-document.body.appendChild(button);
-
-if (import.meta.hot) {
-  import.meta.hot.accept();
-  import.meta.hot.dispose(() => {
-    document.body.removeChild(button);
-  });
-}
 ```
 
-然后在 `main.js` 中引入这个模块：
-
-```js
-import './counter.js';
-```
-
-运行 `npm run dev` 启动开发服务器后，当你修改 `counter.js` 文件时，Vite 会自动触发热更新，无需手动刷新页面。
+运行 `npm run dev` 启动开发服务器后，当你修改 `App.vue` 文件时，Vite 会自动触发热更新，无需手动刷新页面。
 
 ## 深入理解热更新机制
 
 让我们深入探讨 Vite 是如何实现热更新的。
+
+## 建一个 Demo
+
+运行 `pnpm create vite how-work --template vanilla` 启动开发服务器后，当你修改 `App.vue` 文件时，Vite 会自动触发热更新，无需手动刷新页面。
+
+改写 `main.js` 文件：
+
+```js
+function render() {
+  document.querySelector("#app").innerHTML = `
+    <div>
+      <h1>Hello Vite44!</h1>
+    </div>
+  `;
+}
+
+render();
+```
+
+启动服务后，修改 `main.js` 文件，Vite 会自动触发热更新,只不过会刷新整个页面。
+
+怎么实现局部刷新呢？在 `main.js` 文件添加如下代码：
+
+```js
+if (import.meta.hot) {
+  import.meta.hot.accept((newModule) => {
+    newModule?.render();
+  });
+}
+```
+
+再次更改 `main.js` 文件，Vite 会自动触发热更新,只会刷新局部。那么是怎么实现的呢？
 
 ### WebSocket 连接
 
@@ -74,52 +92,8 @@ import './counter.js';
 
 ### 模块更新
 
-客户端接收到更新通知后，会检查受影响的模块并触发相应的更新逻辑。在 `counter.js` 示例中，`import.meta.hot.accept()` 注册了模块的更新回调，而 `import.meta.hot.dispose()` 注册了模块卸载前的清理回调。
+客户端接收到更新通知后，会检查受影响的模块并触发相应的更新逻辑。在 `main.js` 示例中，`import.meta.hot.accept()` 注册了模块的更新回调，当模块更新时，回调函数`render`就会被调用。
 
-## 复杂示例
-
-接下来，我们看一个更复杂的示例，展示如何在一个复杂应用中使用 Vite 的热更新功能。
-
-### 组件热更新
-
-假设我们有一个 React 项目，并使用 Vite 作为开发工具。在 `src` 目录下创建一个 React 组件 `App.jsx`：
-
-```jsx
-// App.jsx
-import React, { useState } from 'react';
-
-function App() {
-  const [count, setCount] = useState(0);
-
-  return (
-    <div>
-      <h1>Count: {count}</h1>
-      <button onClick={() => setCount(count + 1)}>Increment</button>
-    </div>
-  );
-}
-
-export default App;
-```
-
-在 `main.jsx` 中引入这个组件：
-
-```jsx
-import React from 'react';
-import ReactDOM from 'react-dom';
-import App from './App.jsx';
-
-ReactDOM.render(<App />, document.getElementById('root'));
-
-if (import.meta.hot) {
-  import.meta.hot.accept('./App.jsx', () => {
-    const NextApp = require('./App.jsx').default;
-    ReactDOM.render(<NextApp />, document.getElementById('root'));
-  });
-}
-```
-
-运行 `npm run dev` 启动开发服务器后，当你修改 `App.jsx` 文件时，Vite 会自动触发热更新，并重新渲染组件，而无需刷新页面。
 
 ## Vite 的高级热更新功能
 
@@ -141,7 +115,7 @@ body {
 ```
 
 ```js
-import './styles.css';
+import "./styles.css";
 ```
 
 当你修改 `styles.css` 文件时，Vite 会自动更新样式。

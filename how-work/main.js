@@ -7,11 +7,3 @@ function render() {
 }
 
 render()
-
-if(import.meta.hot) {
-  import.meta.hot.accept((newModule) => {
-    if(newModule) {
-      render()
-    }
-  });
-}

@@ -1,10 +1,5 @@
 <script setup>
 
-if (import.meta.hot) {
-  // import.meta.hot.on('vite:beforeUpdate', () => {
-  //   console.log('vite:beforeUpdate')
-  // })
-}
 </script>
 
 <template>
@@ -16,7 +11,7 @@ if (import.meta.hot) {
       HMR相关API
     </a>
     <div>
-      自动刷新
+      自动刷新 22
     </div>
   </div>
 
