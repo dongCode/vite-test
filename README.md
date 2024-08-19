@@ -1,3 +1,10 @@
+# bundle-based vs module bundler
+
+bundle-based
+![webpack](./static/image6.gif)
+module bundler
+![vite](./static/image5.gif)
+
 # Vite 热更新原理
 
 在现代前端开发中，热更新（Hot Module Replacement，简称 HMR）是提高开发效率的关键技术。Vite 作为一个快速的构建工具和开发服务器，以其极速的热更新能力广受欢迎。本篇博客将详细介绍 Vite 的热更新原理，并通过丰富的代码示例，从简单到复杂，逐步剖析其工作机制。
@@ -86,6 +93,57 @@ if (import.meta.hot) {
 
 再次更改 `main.js` 文件，Vite 会自动触发热更新,只会刷新局部。那么是怎么实现的呢？
 
+## 热更新实现原理简介
+
+从整体角度来看，vite 热更新主要分为三步：
+
+1.创建模块依赖图：建立模块间的依赖关系（packages\vite\src\node\server\index.ts）
+
+```js
+const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
+  container.resolveId(url, undefined, { ssr })
+);
+```
+
+建立了如下管理
+ModuleGraph -> ModuleNode -> acceptedHmrDeps 需要热更新的模块
+
+2.服务端收集更新模块：监听文件变化，确定需要更新的模块 （packages\vite\src\node\server\index.ts）
+通过 chokidar 监听文件变化，并触发更新
+
+```js
+const watcher = chokidar.watch(
+[root, ...config.configFileDependencies, config.envDir],
+resolvedWatchOptions,
+) as FSWatcher
+
+```
+
+当文件变化时，会执行以下代码：
+
+```js
+watcher.on("change", async (file) => {
+  file = normalizePath(file);
+  await container.watchChange(file, { event: "update" });
+  // invalidate module graph cache on file change
+  moduleGraph.onFileChange(file); // 重新建立依赖图
+  await onHMRUpdate("update", file); // 触发实际的更新操作
+});
+```
+
+核心方法 `onHMRUpdate` 会触发相关的更新操作,即执行了 `handleHMRUpdate`,其中的三个核心步骤是：
+有三个执行步骤(\packages\vite\src\node\server\hmr.ts)：
+
+    1.配置文件（vite.config.js）、环境变量更新(.env),直接重启服务
+
+    2.客户端注入的文件(vite/dist/client/client.mjs)、html 文件更新，直接reload整个页面
+
+    3.普通文件更新，通过 updateModules 执行热更新操作
+
+3.客户端派发更新：客户端执行文件更新
+
+在项目启动阶段，会向创建的 index.html 注入一段 script 脚本 <script type="module" src="/@vite/client"></script>，`setupWebSocket`去建立与服务端的连接，并通过`handleMessage`监听服务端发送的更新通知,并执行具体的更新操作。
+
 ### WebSocket 连接
 
 当你启动 Vite 的开发服务器时，它会为客户端（浏览器）建立一个 WebSocket 连接，用于实时通信。当服务器检测到文件变化时，它会通过 WebSocket 向客户端发送更新通知。
@@ -93,7 +151,6 @@ if (import.meta.hot) {
 ### 模块更新
 
 客户端接收到更新通知后，会检查受影响的模块并触发相应的更新逻辑。在 `main.js` 示例中，`import.meta.hot.accept()` 注册了模块的更新回调，当模块更新时，回调函数`render`就会被调用。
-
 
 ## Vite 的高级热更新功能
 

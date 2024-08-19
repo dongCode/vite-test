@@ -464,7 +464,7 @@ export async function _createServer(
   const httpServer = middlewareMode
     ? null
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
-
+  
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
   const hot = createHMRBroadcaster()
     .addChannel(ws)
