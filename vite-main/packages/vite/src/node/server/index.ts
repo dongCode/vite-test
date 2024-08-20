@@ -97,7 +97,6 @@ import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { warmupFiles } from './warmup'
-import { log } from 'node:console'
 
 export interface ServerOptions extends CommonServerOptions {
   /**

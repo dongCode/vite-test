@@ -1,3 +1,3 @@
 export const getRandom = () => {
-  return Math.random() * 10000;
+  return Math.random() * 100;
 };
