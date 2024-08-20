@@ -97,6 +97,7 @@ import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { warmupFiles } from './warmup'
+import { log } from 'node:console'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -425,6 +426,8 @@ export interface ResolvedServerUrls {
 export function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
+  console.log(colors.green('vite') + '启动')
+
   return _createServer(inlineConfig, { hotListen: true })
 }
 
@@ -464,7 +467,7 @@ export async function _createServer(
   const httpServer = middlewareMode
     ? null
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
-  
+
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
   const hot = createHMRBroadcaster()
     .addChannel(ws)
